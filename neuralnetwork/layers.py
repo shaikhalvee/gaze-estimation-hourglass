@@ -3,14 +3,17 @@ from torch import nn
 Pool = nn.MaxPool2d
 
 
-def batch_norm(x):
-    return nn.BatchNorm2d(x.size()[1])(x)
+# No need for below
+# def batch_norm(x):
+#     return nn.BatchNorm2d(x.size()[1])(x)
+# batch normalization layer are typically defined within model architectures that have fixed parameters
 
 
 class ConvBlock(nn.Module):
     def __init__(self, input_dim, output_dim, kernel_size=3, stride=1, bn=False, rectified_linear_unit=True):
         super(ConvBlock, self).__init__()
         self.input_dim = input_dim
+        self.output_dim = output_dim
         self.conv = nn.Conv2d(input_dim, output_dim, kernel_size=kernel_size, stride=stride,
                               padding=(kernel_size - 1) // 2, bias=True)
         self.rectified_linear_unit = None
@@ -61,3 +64,8 @@ class ResidualBlock(nn.Module):
         out = self.conv3(out)
         out += residual
         return out
+
+
+class HourglassLayer(nn.Module):
+    def __init__(self, num_hourglasses, feature_dim, b):
+        return
