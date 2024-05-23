@@ -67,5 +67,33 @@ class ResidualBlock(nn.Module):
 
 
 class HourglassLayer(nn.Module):
-    def __init__(self, num_hourglasses, feature_dim, b):
-        return
+    def __init__(self,
+                 num_of_downsampling_steps,
+                 num_of_input_output_features,
+                 batch_normalization=None,
+                 increase_feature=0):
+        super(HourglassLayer, self).__init__()
+        num_of_features = num_of_input_output_features + increase_feature
+        # Upper branch
+        self.upper_branch_1 = ResidualBlock(num_of_input_output_features, num_of_input_output_features)
+        # Lower branch
+        self.pooling_layer = Pool(2, 2)
+        self.lower_branch_1 = ResidualBlock(num_of_input_output_features, num_of_features)
+        self.num_downsample_steps = num_of_downsampling_steps
+        # Recursive Hourglass
+        if self.num_downsample_steps > 1:
+            self.lower_branch_2 = HourglassLayer(num_of_input_output_features - 1,
+                                                 num_of_features,
+                                                 batch_normalization=batch_normalization)
+        else:
+            self.lower_branch_2 = ResidualBlock(num_of_features, num_of_features)
+        self.lower_branch_3 = ResidualBlock(num_of_input_output_features, num_of_features)
+
+    def forward(self, x):
+        upper_branch_1 = self.upper_branch_1(x)
+        pooling_layer = self.pooling_layer(x)
+        lower_branch_1 = self.lower_branch_1(pooling_layer)
+        lower_branch_2 = self.lower_branch_2(lower_branch_1)
+        lower_branch_3 = self.lower_branch_3(lower_branch_2)
+        upper_branch_2 = nn.functional.interpolate(lower_branch_3, x.shape[2:], mode='bilinear')
+        return upper_branch_1 + upper_branch_2
