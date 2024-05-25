@@ -23,14 +23,14 @@ class EyeNet(nn.Module):
 
         self.img_width = 160
         self.img_height = 96
-        self.stacks_of_hourglass = num_stack_of_hourglass
+        self.num_stacks = num_stack_of_hourglass
         self.num_features = num_features
         self.num_landmarks = num_landmarks
 
         self.heatmap_width = self.img_width / 2
         self.heatmap_height = self.img_height / 2
 
-        self.stacks_of_hourglass = num_stack_of_hourglass
+        self.num_stacks = num_stack_of_hourglass
         self.preprocess_layer = nn.Sequential(
             ConvolutionalLayer(1, 64, 7, 1,
                                batch_normalization=True, rectified_linear_unit=True),
@@ -78,7 +78,7 @@ class EyeNet(nn.Module):
             out_features=256)
         self.gaze_prediction_full_connected_2 = nn.Linear(in_features=256, out_features=2)
 
-        self.stacks_of_hourglass = num_stack_of_hourglass
+        self.num_stacks = num_stack_of_hourglass
         self.heatmapLoss = HeatmapLoss()
         self.landmarks_loss = nn.MSELoss()
         self.gaze_loss = nn.MSELoss()
@@ -92,15 +92,15 @@ class EyeNet(nn.Module):
         gaze_tensor = gaze_tensor.flatten(start_dim=1)
 
         hourglass_module_predict_stack = []
-        for i in torch.arange(self.stacks_of_hourglass):
-            hourglass_layer = self.hourglass_layer[i](input_tensor)
-            feature_layer = self.feature_layer[i](hourglass_layer)
-            prediction_layer = self.output_layer[i](feature_layer)
+        for i in torch.arange(self.num_stacks):
+            hourglass_module = self.hourglass_layer[i](input_tensor)
+            feature_refinement = self.feature_layer[i](hourglass_module)
+            prediction_layer = self.output_layer[i](feature_refinement)
             hourglass_module_predict_stack.append(prediction_layer)
-            if i < self.stacks_of_hourglass - 1:
+            if i < self.num_stacks - 1:
                 input_tensor = (input_tensor
                                 + self.merge_prediction_layer[i](prediction_layer)
-                                + self.merge_feature_layer[i](feature_layer))
+                                + self.merge_feature_layer[i](feature_refinement))
 
         heatmaps_out = torch.stack(hourglass_module_predict_stack, 1)
 
@@ -108,19 +108,19 @@ class EyeNet(nn.Module):
         landmarks_out = softargmax2d(prediction_layer)  # N x nlandmarks x 2
 
         # Gaze
-        gaze = torch.cat((gaze_tensor, landmarks_out.flatten(start_dim=1)), dim=1)
-        gaze = self.gaze_prediction_full_connected_1(gaze)
-        gaze = nn.functional.relu(gaze)
-        gaze = self.gaze_prediction_full_connected_2(gaze)
+        gaze_prediction = torch.cat((gaze_tensor, landmarks_out.flatten(start_dim=1)), dim=1)
+        gaze_prediction = self.gaze_prediction_full_connected_1(gaze_prediction)
+        gaze_prediction = nn.functional.relu(gaze_prediction)
+        gaze_prediction = self.gaze_prediction_full_connected_2(gaze_prediction)
 
-        return heatmaps_out, landmarks_out, gaze
+        return heatmaps_out, landmarks_out, gaze_prediction
 
-    def calc_loss(self, combined_hm_preds, heatmaps, landmarks_pred, landmarks, gaze_pred, gaze):
-        combined_loss = []
-        for i in range(self.stacks_of_hourglass):
-            combined_loss.append(self.heatmapLossFunction(combined_hm_preds[:, i, :], heatmaps))
+    def calc_loss(self, hourglass_module_predict_stack, heatmaps, landmarks_pred, landmarks, gaze_pred, gaze):
+        hourglass_stack_with_loss = []
+        for i in range(self.num_stacks):
+            hourglass_stack_with_loss.append(self.heatmapLossFunction(hourglass_module_predict_stack[:, i, :], heatmaps))
 
-        heatmap_loss = torch.stack(combined_loss, dim=1)
+        heatmap_loss = torch.stack(hourglass_stack_with_loss, dim=1)
         landmarks_loss = self.landmarks_loss(landmarks_pred, landmarks)
         gaze_loss = self.gaze_loss(gaze_pred, gaze)
 
