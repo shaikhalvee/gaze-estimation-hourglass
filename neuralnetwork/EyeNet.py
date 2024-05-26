@@ -3,7 +3,7 @@ from torch import nn
 
 from neuralnetwork.layers import ConvolutionalLayer, HourglassLayer, Pool, ResidualLayer
 from neuralnetwork.losses.HeatmapLoss import HeatmapLoss
-from models.softargmax import softargmax2d
+from models.utils.softargmax import softargmax2d
 
 
 class Merge(nn.Module):
