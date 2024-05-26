@@ -16,10 +16,10 @@ class Merge(nn.Module):
         return self.convolutional_layer(x)
 
 
-class EyeNet(nn.Module):
+class GazeNetwork(nn.Module):
     def __init__(self, num_stack_of_hourglass, num_features, num_landmarks,
                  batch_norm=False, increase_feature=0, **kwargs):
-        super(EyeNet, self).__init__()
+        super(GazeNetwork, self).__init__()
 
         self.img_width = 160
         self.img_height = 96
