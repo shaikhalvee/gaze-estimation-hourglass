@@ -1,9 +1,9 @@
 import torch
 from torch import nn
 
-from neuralnetwork.layers import ConvolutionalLayer, HourglassLayer, Pool, ResidualLayer
-from neuralnetwork.losses.HeatmapLoss import HeatmapLoss
-from models.utils.softargmax import softargmax2d
+from gazeNeuralNetwork.layers import ConvolutionalLayer, HourglassLayer, Pool, ResidualLayer
+from gazeNeuralNetwork.losses.HeatmapLoss import HeatmapLoss
+from gazeNeuralNetwork.utils.softargmax import softargmax2d
 
 
 class Merge(nn.Module):
@@ -118,7 +118,8 @@ class GazeNetwork(nn.Module):
     def calc_loss(self, hourglass_module_predict_stack, heatmaps, landmarks_pred, landmarks, gaze_pred, gaze):
         hourglass_stack_with_loss = []
         for i in range(self.num_stacks):
-            hourglass_stack_with_loss.append(self.heatmapLossFunction(hourglass_module_predict_stack[:, i, :], heatmaps))
+            hourglass_stack_with_loss.append(self.heatmapLossFunction(hourglass_module_predict_stack[:, i, :],
+                                                                      heatmaps))
 
         heatmap_loss = torch.stack(hourglass_stack_with_loss, dim=1)
         landmarks_loss = self.landmarks_loss(landmarks_pred, landmarks)

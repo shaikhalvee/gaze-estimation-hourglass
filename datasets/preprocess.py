@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
-from scipy.spatial.transform import Rotation as R
-import models.utils.gaze_functions as gaze_util
+from scipy.spatial.transform import Rotation as Rotation
+import gazeNeuralNetwork.utils.gaze_functions as gaze_util
 
 
 def preprocess_unity_eyes_image(img, json_data):
@@ -48,7 +48,7 @@ def preprocess_unity_eyes_image(img, json_data):
     scale_mat[1, 1] = scale
 
     angle = 0  # np.random.normal(0, 1) * 20 * np.pi/180
-    rotation = R.from_rotvec([0, 0, angle]).as_matrix()
+    rotation = Rotation.from_rotvec([0, 0, angle]).as_matrix()
 
     transform = recenter * rotation * translate * scale_mat
     transform_inv = np.linalg.inv(transform)
