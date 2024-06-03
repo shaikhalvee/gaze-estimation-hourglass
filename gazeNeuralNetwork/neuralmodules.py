@@ -3,7 +3,7 @@ from torch import nn
 
 from gazeNeuralNetwork.layers import ConvolutionalLayer, HourglassLayer, Pool, ResidualLayer
 from gazeNeuralNetwork.losses.HeatmapLoss import HeatmapLoss
-from gazeNeuralNetwork.utils.softargmax import softargmax2d
+from gazeNeuralNetwork.utils.neural_functions import soft_argmax2d
 
 
 class Merge(nn.Module):
@@ -105,7 +105,7 @@ class GazeNetwork(nn.Module):
         heatmaps_out = torch.stack(hourglass_module_predict_stack, 1)
 
         # preds = N x nlandmarks * heatmap_w * heatmap_h
-        landmarks_out = softargmax2d(prediction_layer)  # N x nlandmarks x 2
+        landmarks_out = soft_argmax2d(prediction_layer)  # N x nlandmarks x 2
 
         # Gaze
         gaze_prediction = torch.cat((gaze_tensor, landmarks_out.flatten(start_dim=1)), dim=1)
