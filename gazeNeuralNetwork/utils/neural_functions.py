@@ -1,9 +1,10 @@
+"""Utility methods for common functionalities of neural networks."""
 import numpy as np
 import torch
 import torch.nn as nn
 
 
-def softargmax2d(input_tensor, scaling_factor_beta=100, dtype=torch.float32):
+def soft_argmax2d(input_tensor, scaling_factor_beta=100, dtype=torch.float32):
     *_, h, w = input_tensor.shape
 
     input_tensor = input_tensor.reshape(*_, h * w)
@@ -34,9 +35,29 @@ def softargmax2d(input_tensor, scaling_factor_beta=100, dtype=torch.float32):
     return result_grid.type(dtype)
 
 
-def softargmax1d(input_tensor, scaling_factor_beta=100, dtype=torch.float32):
+def soft_argmax1d(input_tensor, scaling_factor_beta=100, dtype=torch.float32):
     *_, n = input_tensor.shape
     input_tensor = nn.functional.softmax(scaling_factor_beta * input_tensor, dim=-1)
     indices = torch.linspace(0, 1, n)
     result_grid = torch.sum((n - 1) * input_tensor * indices, dim=-1)
     return result_grid.type(dtype)
+
+
+def gaussian_2d(w, h, cx, cy, sigma=1.0):
+    """Generate heatmap with single 2D gaussian."""
+    xs, ys = np.meshgrid(
+        np.linspace(0, w - 1, w, dtype=np.float32),
+        np.linspace(0, h - 1, h, dtype=np.float32)
+    )
+
+    assert xs.shape == (h, w)
+    alpha = -0.5 / (sigma ** 2)
+    heatmap = np.exp(alpha * ((xs - cx) ** 2 + (ys - cy) ** 2))
+    return heatmap
+
+
+def get_heatmaps(w, h, landmarks):
+    heatmaps = []
+    for (y, x) in landmarks:
+        heatmaps.append(gaussian_2d(w, h, cx=x, cy=y, sigma=2.0))
+    return np.array(heatmaps)

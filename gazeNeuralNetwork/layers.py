@@ -69,7 +69,7 @@ class ResidualLayer(nn.Module):
 
 class HourglassLayer(nn.Module):
     def __init__(self,
-                 num_of_downsampling_steps,
+                 num_of_downsample_steps,
                  num_of_input_output_features,
                  batch_normalization=None,
                  increase_feature=0):
@@ -80,9 +80,9 @@ class HourglassLayer(nn.Module):
         # Lower branch
         self.pooling_layer = Pool(2, 2)
         self.lower_branch_1 = ResidualLayer(num_of_input_output_features, num_of_features)
-        self.num_downsample_steps = num_of_downsampling_steps
+        self.num_hourglass_stacks = num_of_downsample_steps
         # Recursive Hourglass
-        if self.num_downsample_steps > 1:
+        if self.num_hourglass_stacks > 1:
             self.lower_branch_2 = HourglassLayer(num_of_input_output_features - 1,
                                                  num_of_features,
                                                  batch_normalization=batch_normalization)
